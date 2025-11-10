@@ -1,0 +1,62 @@
+name: File size check
+
+# Controls when the workflow will run
+on:
+  push:
+    branches: [ "main" ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v4
+
+      - name: Configure git with username
+        run: | 
+          git config --global user.email "wong-alan@users.noreply.github.com"
+          git config --global user.name "wong-alan"
+
+      - name: Display a list of uppercase file extensions
+        run: find . -name "*.*[A-Z]*" ! -name "*.*[^A-Z]*"
+
+      - name: Rename files to lowercase equivalents
+        run: find . -depth -regex ".*\.\(JPG\|JPEG\|PNG\)" -type f -exec bash -c 'base=${0%.*} ext=${0##*.} a=${base,,}.${ext,,}; [ "$a" != "$0" ] && mv -- "$0" "$a"' {} \;
+      
+      - name: Fix files
+        run: find . -type f -regex ".*\.\(jpg\|png\)" -exec mogrify -format avif {} \;
+    
+      - name: Delete files
+        run: find . -type f -regex ".*\.\(jpg\|png\)") -delete;
+      
+      - name: Replace spaces with '_' in filenames
+        run: find . -type f -name "* *" | while read file; do mv "$file" ${file// /_}; done
+      
+      - name: Commit any changed files to main
+        if: github.ref == 'refs/heads/main'
+        run: |
+          if [[ $(git status -s) ]]; then
+            git add -a
+            git commit -m "Fix file names"
+            git push origin main
+          fi
+      
+      - name: Bring resolution down to 1080 maximum on x and y, 70% qual on images over 500K big
+        run: find . -type f -name "*.avif" -size +500k -exec convert {} -resize 1080x1080 -quality 70% {} \;
+
+      # Twice, once to actually output the list, second time to output non zero and break CI
+      - name: List images that are too large
+        run: |
+         find . -name "*.avif" -type f -size +500k
+         find . -name "*.avif" -type f -size +500k -exec false {} +
+      
+      # TODO: Sync to S3
+      
