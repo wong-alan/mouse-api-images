@@ -32,10 +32,10 @@ jobs:
         run: find . -depth -regex ".*\.\(JPG\|JPEG\|PNG\)" -type f -exec bash -c 'base=${0%.*} ext=${0##*.} a=${base,,}.${ext,,}; [ "$a" != "$0" ] && mv -- "$0" "$a"' {} \;
       
       - name: Fix files
-        run: find . -type f -regex ".*\.\(jpg\|png\)" -exec mogrify -format avif {} \;
+        run: find . -type f -regex ".*\.\(jpg\|jpeg\|png\)" -exec mogrify -format avif {} \;
     
       - name: Delete files
-        run: find . -type f -regex ".*\.\(jpg\|png\)") -delete;
+        run: find . -type f -regex ".*\.\(jpg\|jpeg\|png\)" -delete;
       
       - name: Replace spaces with '_' in filenames
         run: find . -type f -name "* *" | while read file; do mv "$file" ${file// /_}; done
